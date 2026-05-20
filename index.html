@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Pack & To-Do</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Meine Listen</title>
     <style>
         :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --red: #e74c3c; --grey: #444; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
@@ -23,7 +24,7 @@
 
 <div class="container">
     <header>
-        <select id="listSelect" onchange="switchList()"></select>
+        <select id="listSelect" onchange="switchList()"></switch>
         <button onclick="addList()">+</button>
     </header>
     <div id="items"></div>
@@ -31,7 +32,46 @@
 </div>
 
 <script>
-    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": [], "Urlaub": [], "To-Do": [] };
+    const initialItems = [
+        { name: "Handtuch groß", total: 1, packed: 0, status: 'pending' }, { name: "Handtuch klein", total: 2, packed: 2, status: 'done' },
+        { name: "Boxer", total: 8, packed: 2, status: 'pending' }, { name: "Shirt normal", total: 6, packed: 6, status: 'done' },
+        { name: "Shirt bw", total: 8, packed: 0, status: 'missing' }, { name: "Socken schwarz bw", total: 9, packed: 0, status: 'missing' },
+        { name: "Socken Sport", total: 8, packed: 4, status: 'missing' }, { name: "Sportanzug bw", total: 1, packed: 1, status: 'done' },
+        { name: "Pullover Bw", total: 3, packed: 1, status: 'missing' }, { name: "Sportanzug normal", total: 2, packed: 1, status: 'missing' },
+        { name: "SportSchuhe / Hallenschuhe", total: 1, packed: 1, status: 'done' }, { name: "Badelatschen", total: 1, packed: 1, status: 'done' },
+        { name: "Combatshirt", total: 3, packed: 0, status: 'skip' }, { name: "Weste / Kobbel", total: 1, packed: 0, status: 'skip' },
+        { name: "Ersatzstiefel", total: 2, packed: 1, status: 'missing' }, { name: "Helm", total: 1, packed: 0, status: 'skip' },
+        { name: "Barett", total: 1, packed: 1, status: 'done' }, { name: "Schießbrille", total: 1, packed: 0, status: 'skip' },
+        { name: "Sichtschutz Bett", total: 1, packed: 0, status: 'skip' }, { name: "Kleiderbügel", total: 1, packed: 1, status: 'done' },
+        { name: "Handschuhe", total: 1, packed: 0, status: 'skip' }, { name: "Unterhose", total: 3, packed: 0, status: 'skip' },
+        { name: "Blaumann", total: 2, packed: 1, status: 'missing' }, { name: "Arbeitsschutzschuhe", total: 1, packed: 0, status: 'skip' },
+        { name: "Panzerkombi", total: 1, packed: 1, status: 'done' }, { name: "Taschenlampe", total: 1, packed: 0, status: 'skip' },
+        { name: "Unterlagen SPz", total: 1, packed: 0, status: 'skip' }, { name: "Uniform - Hose/Bluse", total: 1, packed: 0, status: 'missing' },
+        { name: "Parker grün", total: 1, packed: 1, status: 'done' }, { name: "Ersatzmütze", total: 1, packed: 1, status: 'done' },
+        { name: "Tablet", total: 1, packed: 0, status: 'missing' }, { name: "Wäschesack", total: 1, packed: 1, status: 'done' },
+        { name: "Tee", total: 1, packed: 0, status: 'pending' }, { name: "Steckdose", total: 1, packed: 1, status: 'done' },
+        { name: "Tasse (thermo)", total: 1, packed: 0, status: 'pending' }, { name: "Schlösser", total: 3, packed: 2, status: 'done' },
+        { name: "Ladegerät", total: 1, packed: 0, status: 'missing' }, { name: "Kopfhörer", total: 1, packed: 0, status: 'missing' },
+        { name: "Kulturbeutel", total: 1, packed: 0, status: 'missing' }, { name: "Powerbank", total: 1, packed: 0, status: 'missing' },
+        { name: "Ersatzbrille", total: 1, packed: 1, status: 'done' }, { name: "Magnesium", total: 1, packed: 0, status: 'missing' },
+        { name: "Taschentücher", total: 1, packed: 0, status: 'missing' }, { name: "Remmi", total: 1, packed: 0, status: 'missing' },
+        { name: "Camping Stuhl", total: 1, packed: 1, status: 'done' }, { name: "Kuscheltier", total: 1, packed: 0, status: 'pending' },
+        { name: "Bettwäsche", total: 1, packed: 0, status: 'missing' }, { name: "Waschpad", total: 1, packed: 0, status: 'missing' },
+        { name: "Besteck", total: 1, packed: 0, status: 'missing' }, { name: "Teller (Dose grün)", total: 1, packed: 0, status: 'pending' },
+        { name: "Nudel Yamyam", total: 1, packed: 0, status: 'missing' }, { name: "Kuli", total: 1, packed: 1, status: 'done' },
+        { name: "Kissen (Normal)", total: 1, packed: 0, status: 'missing' }, { name: "Nachtlicht", total: 1, packed: 1, status: 'done' },
+        { name: "Kopfkissen Luft", total: 1, packed: 0, status: 'skip' }, { name: "Luftmatratze", total: 1, packed: 0, status: 'skip' },
+        { name: "Wasserkocher", total: 1, packed: 1, status: 'done' }, { name: "Schlafsack", total: 1, packed: 0, status: 'skip' },
+        { name: "Meldeblock", total: 1, packed: 0, status: 'skip' }, { name: "Switch/Spiele", total: 1, packed: 0, status: 'skip' },
+        { name: "Toilettenpapier feucht", total: 1, packed: 0, status: 'missing' }, { name: "Creme", total: 1, packed: 0, status: 'missing' },
+        { name: "Deo Stick", total: 1, packed: 0, status: 'missing' }, { name: "Duschbad", total: 1, packed: 0, status: 'missing' },
+        { name: "Head&Shulders", total: 1, packed: 0, status: 'missing' }, { name: "Uhrenschutz", total: 1, packed: 0, status: 'skip' },
+        { name: "Rasierer elektrisch", total: 1, packed: 0, status: 'missing' }, { name: "Zahnbürste", total: 1, packed: 0, status: 'missing' },
+        { name: "Kaffeepulver", total: 1, packed: 0, status: 'missing' }, { name: "Pi-Schnur", total: 1, packed: 1, status: 'done' },
+        { name: "Kaugummi", total: 1, packed: 0, status: 'missing' }
+    ];
+
+    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": initialItems, "Urlaub": [], "To-Do": [] };
     let currentList = "Übungsplatz";
 
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
@@ -53,7 +93,7 @@
                     <div class="status-dot" style="background:var(--${item.status=='done'?'green':item.status=='missing'?'red':item.status=='skip'?'grey':'grey'})" onclick="toggleStatus(${idx})"></div>
                     <div class="info" onclick="editItem(${idx})">${item.name}</div>
                     ${!isTodo ? `
-                        <div style="font-size:0.8em; font-weight:bold;">${item.packed}/${item.total}</div>
+                        <div style="font-size:0.8em; font-weight:bold; min-width:40px; text-align:center;">${item.packed}/${item.total}</div>
                         <div style="display:flex; gap:3px;">
                             <button onclick="data[currentList][${idx}].packed = Math.max(0, data[currentList][${idx}].packed-1); save()">-</button>
                             <button onclick="data[currentList][${idx}].packed = Math.min(data[currentList][${idx}].total, data[currentList][${idx}].packed+1); save()">+</button>
@@ -84,7 +124,10 @@
 
     function addList() { let n = prompt("Name der neuen Liste:"); if (n) { data[n] = []; save(); initSelect(); } }
     function addItem() { let n = prompt("Bezeichnung:"); if (n) { data[currentList].push({ name:n, total:1, packed:0, status:'pending' }); save(); } }
-    function initSelect() { document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join(''); }
+    function initSelect() { 
+        let sel = document.getElementById('listSelect');
+        sel.innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
+    }
 
     initSelect(); render();
 </script>

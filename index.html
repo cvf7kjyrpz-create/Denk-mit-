@@ -7,13 +7,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Pack-App</title>
     <style>
-        :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --red: #e74c3c; --grey: #444; }
+        :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --yellow: #f1c40f; --grey: #444; --red: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 500px; margin: 0 auto; }
         .row-wrapper { position: relative; overflow: hidden; margin-bottom: 5px; height: 45px; }
         .card { background: var(--panel); padding: 0 10px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 10px; position: absolute; width: 100%; box-sizing: border-box; z-index: 2; transition: transform 0.2s; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
         .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; }
+        .skip { text-decoration: line-through; opacity: 0.5; }
         .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; z-index: 1; }
         .controls { display: flex; gap: 5px; }
         button { background: #222; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
@@ -80,8 +81,14 @@
 
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
-    function toggleStatus(idx) { const s = ['pending', 'done', 'missing', 'skip']; let item = data[currentList][idx]; item.status = s[(s.indexOf(item.status) + 1) % 4]; save(); }
     
+    function toggleStatus(idx) { 
+        const s = ['pending', 'done', 'skip']; 
+        let item = data[currentList][idx]; 
+        item.status = s[(s.indexOf(item.status) + 1) % 3]; 
+        save(); 
+    }
+
     function updatePacked(idx, delta) {
         let item = data[currentList][idx];
         item.packed = Math.max(0, Math.min(item.total, item.packed + delta));
@@ -95,15 +102,28 @@
         save();
     }
 
+    function moveItem(idx) {
+        let newIdx = prompt("Verschieben nach Position (1-" + data[currentList].length + "):");
+        if (newIdx && !isNaN(newIdx)) {
+            let item = data[currentList].splice(idx, 1)[0];
+            data[currentList].splice(newIdx - 1, 0, item);
+            save();
+        }
+    }
+
     function render() {
         let listDiv = document.getElementById('items');
         document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
         
-        listDiv.innerHTML = data[currentList].map((item, idx) => `
+        listDiv.innerHTML = data[currentList].map((item, idx) => {
+            let color = item.status == 'done' ? 'var(--green)' : (item.packed > 0 ? 'var(--yellow)' : 'var(--grey)');
+            if (item.status == 'skip') color = 'var(--grey)';
+            
+            return `
             <div class="row-wrapper">
-                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})">
-                    <div class="status-dot" style="background:var(--${item.status=='done'?'green':item.status=='missing'?'red':item.status=='skip'?'grey':'grey'})" onclick="toggleStatus(${idx})"></div>
-                    <div class="info" onclick="editItem(${idx})">${item.total}x ${item.name}</div>
+                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})" oncontextmenu="event.preventDefault(); moveItem(${idx})">
+                    <div class="status-dot" style="background:${color}" onclick="toggleStatus(${idx})"></div>
+                    <div class="info ${item.status=='skip' ? 'skip' : ''}" onclick="editItem(${idx})">${item.total}x ${item.name}</div>
                     <div style="font-size:0.8em; margin-right:10px">${item.packed}/${item.total}</div>
                     <div class="controls">
                         <button onclick="updatePacked(${idx}, -1)">-</button>
@@ -112,7 +132,8 @@
                 </div>
                 <button class="del-btn" onclick="data[currentList].splice(${idx},1); save()">Löschen</button>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     let tx = 0;

@@ -11,13 +11,14 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 500px; margin: 0 auto; }
         .row-wrapper { position: relative; overflow: hidden; margin-bottom: 5px; height: 45px; }
-        .card { background: var(--panel); padding: 0 10px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: transform 0.2s; position: absolute; width: 100%; box-sizing: border-box; }
+        .card { background: var(--panel); padding: 0 10px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 10px; position: absolute; width: 100%; box-sizing: border-box; z-index: 2; transition: transform 0.2s; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
-        .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; }
+        .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; }
+        .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; z-index: 1; }
+        .controls { display: flex; gap: 5px; }
+        button { background: #222; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
         header { display: flex; gap: 10px; margin-bottom: 15px; }
         select { flex-grow: 1; background: var(--panel); color: white; padding: 8px; border: 1px solid #333; border-radius: 4px; }
-        button { background: #222; border: 1px solid #555; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -28,7 +29,7 @@
         <button onclick="addList()">+</button>
     </header>
     <div id="items"></div>
-    <button onclick="addItem()" style="width: 100%; margin-top: 15px;">+ Gegenstand hinzufügen</button>
+    <button onclick="addItem()" style="width: 100%; margin-top: 15px; padding: 10px;">+ Hinzufügen</button>
 </div>
 
 <script>
@@ -79,20 +80,18 @@
 
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
-
-    function toggleStatus(idx) {
-        const s = ['pending', 'done', 'missing', 'skip'];
+    function toggleStatus(idx) { const s = ['pending', 'done', 'missing', 'skip']; let item = data[currentList][idx]; item.status = s[(s.indexOf(item.status) + 1) % 4]; save(); }
+    
+    function updatePacked(idx, delta) {
         let item = data[currentList][idx];
-        item.status = s[(s.indexOf(item.status) + 1) % 4];
+        item.packed = Math.max(0, Math.min(item.total, item.packed + delta));
         save();
     }
 
     function editItem(idx) {
         let item = data[currentList][idx];
-        let n = prompt("Name:", item.name);
-        if (n !== null) item.name = n;
-        let t = prompt("Gesamtmenge:", item.total);
-        if (t !== null) item.total = parseInt(t) || 1;
+        let n = prompt("Name:", item.name); if (n !== null) item.name = n;
+        let t = prompt("Gesamtmenge:", item.total); if (t !== null) item.total = parseInt(t) || 1;
         save();
     }
 
@@ -105,6 +104,11 @@
                 <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})">
                     <div class="status-dot" style="background:var(--${item.status=='done'?'green':item.status=='missing'?'red':item.status=='skip'?'grey':'grey'})" onclick="toggleStatus(${idx})"></div>
                     <div class="info" onclick="editItem(${idx})">${item.total}x ${item.name}</div>
+                    <div style="font-size:0.8em; margin-right:10px">${item.packed}/${item.total}</div>
+                    <div class="controls">
+                        <button onclick="updatePacked(${idx}, -1)">-</button>
+                        <button onclick="updatePacked(${idx}, 1)">+</button>
+                    </div>
                 </div>
                 <button class="del-btn" onclick="data[currentList].splice(${idx},1); save()">Löschen</button>
             </div>
@@ -113,10 +117,10 @@
 
     let tx = 0;
     function ts(e, i) { tx = e.touches[0].clientX; }
-    function te(e, i) { if (tx - e.changedTouches[0].clientX > 50) document.getElementById('card-'+i).style.transform = 'translateX(-80px)'; else document.getElementById('card-'+i).style.transform = 'translateX(0)'; }
+    function te(e, i) { let c = document.getElementById('card-'+i); if (tx - e.changedTouches[0].clientX > 50) c.style.transform = 'translateX(-80px)'; else c.style.transform = 'translateX(0)'; }
 
     function addList() { let n = prompt("Name:"); if (n && !data[n]) { data[n] = []; save(); } }
-    function addItem() { let n = prompt("Gegenstand:"); if (n) { data[currentList].push({ name:n, total:1, status:'pending' }); save(); } }
+    function addItem() { let n = prompt("Name:"); if (n) { data[currentList].push({ name:n, total:1, packed:0, status:'pending' }); save(); } }
     render();
 </script>
 </body>

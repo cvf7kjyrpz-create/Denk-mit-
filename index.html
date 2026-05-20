@@ -15,6 +15,7 @@
         .status-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
         .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; }
         .skip { text-decoration: line-through; opacity: 0.4; }
+        .pos-nr { font-size: 0.7em; color: #666; width: 20px; }
         .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; z-index: 1; }
         .controls { display: flex; gap: 5px; }
         button { background: #222; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
@@ -34,7 +35,13 @@
 </div>
 
 <script>
-    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": [], "To-Do": [] };
+    const defaultList = [
+        { name: "Handtuch groß", total: 1, packed: 0, status: 'pending' }, { name: "Handtuch klein", total: 2, packed: 0, status: 'pending' },
+        { name: "Boxer", total: 8, packed: 0, status: 'pending' }, { name: "Shirt normal", total: 6, packed: 0, status: 'pending' },
+        { name: "Socken schwarz", total: 9, packed: 0, status: 'pending' }, { name: "Stiefel", total: 1, packed: 0, status: 'pending' }
+    ];
+
+    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": defaultList, "To-Do": [] };
     let currentList = Object.keys(data)[0];
 
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
@@ -42,7 +49,7 @@
     
     function toggleStatus(idx) { 
         let item = data[currentList][idx];
-        if (currentList.toLowerCase().includes('to-do')) {
+        if (currentList === "To-Do") {
             item.status = (item.status === 'done') ? 'pending' : 'done';
         } else {
             const s = ['pending', 'done', 'skip']; 
@@ -59,18 +66,14 @@
 
     function editItem(idx) {
         let item = data[currentList][idx];
-        let n = prompt("Name bearbeiten:", item.name); 
+        let n = prompt("Name:", item.name); 
         if (n !== null) item.name = n;
-        if (!currentList.toLowerCase().includes('to-do')) {
-            let t = prompt("Gesamtmenge bearbeiten:", item.total); 
+        if (currentList !== "To-Do") {
+            let t = prompt("Anzahl:", item.total); 
             if (t !== null) item.total = parseInt(t) || 1;
         }
         save();
     }
-
-    let pressTimer;
-    function startPress(idx) { pressTimer = setTimeout(() => moveItem(idx), 800); }
-    function endPress() { clearTimeout(pressTimer); }
 
     function moveItem(idx) {
         let newIdx = prompt("Verschieben nach Position (1-" + data[currentList].length + "):");
@@ -82,19 +85,20 @@
     }
 
     function render() {
-        let isTodo = currentList.toLowerCase().includes('to-do');
+        let isTodo = (currentList === "To-Do");
         let listDiv = document.getElementById('items');
         document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
         
         listDiv.innerHTML = data[currentList].map((item, idx) => {
-            let color = (item.status == 'done') ? 'var(--green)' : (item.packed > 0 && item.packed < item.total ? 'var(--yellow)' : 'var(--grey)');
+            let color = (item.status == 'done') ? 'var(--green)' : (isTodo ? 'var(--grey)' : (item.packed > 0 && item.packed < item.total ? 'var(--yellow)' : (item.packed == item.total && item.total > 0 ? 'var(--green)' : 'var(--grey)')));
             if (item.status == 'skip') color = 'var(--grey)';
             
             return `
             <div class="row-wrapper">
-                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx}); startPress(${idx})" ontouchend="te(event, ${idx}); endPress()" onmousedown="startPress(${idx})" onmouseup="endPress()">
+                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})" oncontextmenu="event.preventDefault(); moveItem(${idx})">
+                    <div class="pos-nr">${idx + 1}</div>
                     <div class="status-dot" style="background:${color}" onclick="toggleStatus(${idx})"></div>
-                    <div class="info ${item.status=='skip' || item.status=='done' ? 'skip' : ''}" onclick="editItem(${idx})">
+                    <div class="info ${item.status=='skip' || (isTodo && item.status=='done') ? 'skip' : ''}" onclick="editItem(${idx})">
                         ${!isTodo ? item.total + 'x ' : ''}${item.name}
                     </div>
                     ${!isTodo ? `
@@ -112,7 +116,12 @@
 
     let tx = 0;
     function ts(e, i) { tx = e.touches[0].clientX; }
-    function te(e, i) { let c = document.getElementById('card-'+i); if (tx - e.changedTouches[0].clientX > 50) c.style.transform = 'translateX(-80px)'; else c.style.transform = 'translateX(0)'; }
+    function te(e, i) { 
+        let c = document.getElementById('card-'+i); 
+        if (tx - e.changedTouches[0].clientX > 50) c.style.transform = 'translateX(-80px)'; 
+        else if (e.changedTouches[0].clientX - tx > 50) moveItem(i);
+        else c.style.transform = 'translateX(0)'; 
+    }
 
     function addList() { let n = prompt("Name:"); if (n && !data[n]) { data[n] = []; save(); } }
     function addItem() { let n = prompt("Name:"); if (n) { data[currentList].push({ name:n, total:1, packed:0, status:'pending' }); save(); } }

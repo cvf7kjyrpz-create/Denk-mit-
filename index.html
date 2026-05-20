@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Minimal Pack</title>
+    <title>Pack-App</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #000; color: #eee; margin: 0; padding: 20px; }
+        :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --red: #e74c3c; --grey: #444; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 500px; margin: 0 auto; }
-        header { display: flex; gap: 10px; margin-bottom: 20px; }
-        select { flex-grow: 1; background: #111; color: #fff; border: 1px solid #333; padding: 8px; border-radius: 4px; }
-        .item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #111; }
-        .info { flex-grow: 1; cursor: pointer; }
-        .done { text-decoration: line-through; opacity: 0.4; }
-        .controls { display: flex; align-items: center; gap: 10px; }
-        button { background: #111; border: 1px solid #333; color: #888; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        .del { color: #500; font-size: 0.8em; margin-left: 10px; cursor: pointer; }
+        .row-wrapper { position: relative; overflow: hidden; margin-bottom: 5px; height: 45px; }
+        .card { background: var(--panel); padding: 0 10px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: transform 0.2s; position: absolute; width: 100%; box-sizing: border-box; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; }
+        header { display: flex; gap: 10px; margin-bottom: 15px; }
+        select { flex-grow: 1; background: var(--panel); color: white; padding: 8px; border: 1px solid #333; border-radius: 4px; }
+        button { background: #222; border: 1px solid #555; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -27,47 +28,50 @@
         <button onclick="addList()">+</button>
     </header>
     <div id="items"></div>
-    <button onclick="addItem()" style="width: 100%; margin-top: 20px; padding: 10px;">+ Hinzufügen</button>
+    <button onclick="addItem()" style="width: 100%; margin-top: 15px;">+ Gegenstand hinzufügen</button>
 </div>
 
 <script>
     const initialItems = [
-        { name: "Handtuch groß", total: 1, packed: 0, done: false }, { name: "Handtuch klein", total: 2, packed: 2, done: false },
-        { name: "Boxer", total: 8, packed: 2, done: false }, { name: "Shirt normal", total: 6, packed: 6, done: false },
-        { name: "Shirt bw", total: 8, packed: 0, done: false }, { name: "Socken schwarz bw", total: 9, packed: 0, done: false },
-        { name: "Socken Sport", total: 8, packed: 4, done: false }, { name: "Sportanzug bw", total: 1, packed: 1, done: false },
-        { name: "Pullover Bw", total: 3, packed: 1, done: false }, { name: "Sportanzug normal", total: 2, packed: 1, done: false },
-        { name: "SportSchuhe / Hallenschuhe", total: 1, packed: 1, done: false }, { name: "Badelatschen", total: 1, packed: 1, done: false },
-        { name: "Combatshirt", total: 3, packed: 0, done: false }, { name: "Weste / Kobbel", total: 1, packed: 0, done: false },
-        { name: "Ersatzstiefel", total: 2, packed: 1, done: false }, { name: "Helm", total: 1, packed: 0, done: false },
-        { name: "Barett", total: 1, packed: 1, done: false }, { name: "Schießbrille", total: 1, packed: 0, done: false },
-        { name: "Sichtschutz Bett", total: 1, packed: 0, done: false }, { name: "Kleiderbügel", total: 1, packed: 1, done: false },
-        { name: "Handschuhe", total: 1, packed: 0, done: false }, { name: "Unterhose", total: 3, packed: 0, done: false },
-        { name: "Blaumann", total: 2, packed: 1, done: false }, { name: "Arbeitsschutzschuhe", total: 1, packed: 0, done: false },
-        { name: "Panzerkombi", total: 1, packed: 1, done: false }, { name: "Taschenlampe", total: 1, packed: 0, done: false },
-        { name: "Unterlagen SPz", total: 1, packed: 0, done: false }, { name: "Uniform - Hose/Bluse", total: 1, packed: 0, done: false },
-        { name: "Parker grün", total: 1, packed: 1, done: false }, { name: "Ersatzmütze", total: 1, packed: 1, done: false },
-        { name: "Tablet", total: 1, packed: 0, done: false }, { name: "Wäschesack", total: 1, packed: 1, done: false },
-        { name: "Tee", total: 1, packed: 0, done: false }, { name: "Steckdose", total: 1, packed: 1, done: false },
-        { name: "Tasse (thermo)", total: 1, packed: 0, done: false }, { name: "Schlösser", total: 3, packed: 2, done: false },
-        { name: "Ladegerät", total: 1, packed: 0, done: false }, { name: "Kopfhörer", total: 1, packed: 0, done: false },
-        { name: "Kulturbeutel", total: 1, packed: 0, done: false }, { name: "Powerbank", total: 1, packed: 0, done: false },
-        { name: "Ersatzbrille", total: 1, packed: 1, done: false }, { name: "Magnesium", total: 1, packed: 0, done: false },
-        { name: "Taschentücher", total: 1, packed: 0, done: false }, { name: "Remmi", total: 1, packed: 0, done: false },
-        { name: "Camping Stuhl", total: 1, packed: 1, done: false }, { name: "Kuscheltier", total: 1, packed: 0, done: false },
-        { name: "Bettwäsche", total: 1, packed: 0, done: false }, { name: "Waschpad", total: 1, packed: 0, done: false },
-        { name: "Besteck", total: 1, packed: 0, done: false }, { name: "Teller (Dose grün)", total: 1, packed: 0, done: false },
-        { name: "Nudel Yamyam", total: 1, packed: 0, done: false }, { name: "Kuli", total: 1, packed: 1, done: false },
-        { name: "Kissen (Normal)", total: 1, packed: 0, done: false }, { name: "Nachtlicht", total: 1, packed: 1, done: false },
-        { name: "Kopfkissen Luft", total: 1, packed: 0, done: false }, { name: "Luftmatratze", total: 1, packed: 0, done: false },
-        { name: "Wasserkocher", total: 1, packed: 1, done: false }, { name: "Schlafsack", total: 0, packed: 0, done: false },
-        { name: "Meldeblock", total: 1, packed: 0, done: false }, { name: "Switch/Spiele", total: 1, packed: 0, done: false },
-        { name: "Toilettenpapier feucht", total: 1, packed: 0, done: false }, { name: "Creme", total: 1, packed: 0, done: false },
-        { name: "Deo Stick", total: 1, packed: 0, done: false }, { name: "Duschbad", total: 1, packed: 0, done: false },
-        { name: "Head&Shulders", total: 1, packed: 0, done: false }, { name: "Uhrenschutz", total: 1, packed: 0, done: false },
-        { name: "Rasierer elektrisch", total: 1, packed: 0, done: false }, { name: "Zahnbürste", total: 1, packed: 0, done: false },
-        { name: "Kaffeepulver", total: 1, packed: 0, done: false }, { name: "Pi-Schnur", total: 1, packed: 1, done: false },
-        { name: "Kaugummi", total: 1, packed: 0, done: false }
+        { name: "Handtuch groß", total: 1, packed: 0, status: 'pending' }, { name: "Handtuch klein", total: 2, packed: 0, status: 'pending' },
+        { name: "Boxer", total: 8, packed: 0, status: 'pending' }, { name: "Shirt normal", total: 6, packed: 0, status: 'pending' },
+        { name: "Shirt bw", total: 8, packed: 0, status: 'pending' }, { name: "Socken schwarz bw", total: 9, packed: 0, status: 'pending' },
+        { name: "Socken Sport", total: 8, packed: 0, status: 'pending' }, { name: "Sportanzug bw", total: 1, packed: 0, status: 'pending' },
+        { name: "Pullover Bw", total: 3, packed: 0, status: 'pending' }, { name: "Sportanzug normal", total: 2, packed: 0, status: 'pending' },
+        { name: "SportSchuhe / Hallenschuhe", total: 1, packed: 0, status: 'pending' }, { name: "Badelatschen", total: 1, packed: 0, status: 'pending' },
+        { name: "Combatshirt", total: 3, packed: 0, status: 'pending' }, { name: "Weste / Kobbel", total: 1, packed: 0, status: 'pending' },
+        { name: "Ersatzstiefel", total: 2, packed: 0, status: 'pending' }, { name: "Helm", total: 1, packed: 0, status: 'pending' },
+        { name: "Barett", total: 1, packed: 0, status: 'pending' }, { name: "Schießbrille", total: 1, packed: 0, status: 'pending' },
+        { name: "Sichtschutz Bett", total: 1, packed: 0, status: 'pending' }, { name: "Kleiderbügel", total: 1, packed: 0, status: 'pending' },
+        { name: "Handschuhe", total: 1, packed: 0, status: 'pending' }, { name: "Unterhose", total: 3, packed: 0, status: 'pending' },
+        { name: "Blaumann", total: 2, packed: 0, status: 'pending' }, { name: "Arbeitsschutzschuhe", total: 1, packed: 0, status: 'pending' },
+        { name: "Panzerkombi", total: 1, packed: 0, status: 'pending' }, { name: "Taschenlampe", total: 1, packed: 0, status: 'pending' },
+        { name: "Unterlagen SPz", total: 1, packed: 0, status: 'pending' }, { name: "Uniform - Hose und Bluse", total: 1, packed: 0, status: 'pending' },
+        { name: "Parker grün", total: 1, packed: 0, status: 'pending' }, { name: "Ersatzmütze / Wintermütze", total: 1, packed: 0, status: 'pending' },
+        { name: "Tablet", total: 1, packed: 0, status: 'pending' }, { name: "Wäschesack", total: 1, packed: 0, status: 'pending' },
+        { name: "Tee", total: 1, packed: 0, status: 'pending' }, { name: "Steckdose", total: 1, packed: 0, status: 'pending' },
+        { name: "Tasse (thermo)", total: 1, packed: 0, status: 'pending' }, { name: "Schlösser", total: 3, packed: 0, status: 'pending' },
+        { name: "Ladegerät", total: 1, packed: 0, status: 'pending' }, { name: "Kopfhörer", total: 1, packed: 0, status: 'pending' },
+        { name: "Kulturbeutel", total: 1, packed: 0, status: 'pending' }, { name: "Powerbank", total: 1, packed: 0, status: 'pending' },
+        { name: "Ersatzbrille", total: 1, packed: 0, status: 'pending' }, { name: "Magnesium", total: 1, packed: 0, status: 'pending' },
+        { name: "Taschentücher", total: 1, packed: 0, status: 'pending' }, { name: "Remmi", total: 1, packed: 0, status: 'pending' },
+        { name: "Camping Stuhl", total: 1, packed: 0, status: 'pending' }, { name: "Kuscheltier", total: 1, packed: 0, status: 'pending' },
+        { name: "Bettwäsche", total: 1, packed: 0, status: 'pending' }, { name: "Waschpad", total: 1, packed: 0, status: 'pending' },
+        { name: "Besteck", total: 1, packed: 0, status: 'pending' }, { name: "Teller (Dose grün)", total: 1, packed: 0, status: 'pending' },
+        { name: "Nudel Yamyam", total: 1, packed: 0, status: 'pending' }, { name: "Kuli", total: 1, packed: 0, status: 'pending' },
+        { name: "Kissen (Normal)", total: 1, packed: 0, status: 'pending' }, { name: "Nachtlicht", total: 1, packed: 0, status: 'pending' },
+        { name: "Kopfkissen Luft normal", total: 1, packed: 0, status: 'pending' }, { name: "Luftmatratze + Überzug", total: 1, packed: 0, status: 'pending' },
+        { name: "Wasserkocher", total: 1, packed: 0, status: 'pending' }, { name: "Schlafsack", total: 1, packed: 0, status: 'pending' },
+        { name: "Meldeblock", total: 1, packed: 0, status: 'pending' }, { name: "Luftmatratze", total: 1, packed: 0, status: 'pending' },
+        { name: "Switch, Ladegerät, Spiele", total: 1, packed: 0, status: 'pending' }, { name: "Toilettenpapier feucht", total: 1, packed: 0, status: 'pending' },
+        { name: "Creme", total: 1, packed: 0, status: 'pending' }, { name: "Deo Stick", total: 1, packed: 0, status: 'pending' },
+        { name: "Duschbad", total: 1, packed: 0, status: 'pending' }, { name: "Head&Shulders", total: 1, packed: 0, status: 'pending' },
+        { name: "Uhrenschutz", total: 1, packed: 0, status: 'pending' }, { name: "Rasierer elektrisch", total: 1, packed: 0, status: 'pending' },
+        { name: "Zahnbürste", total: 1, packed: 0, status: 'pending' }, { name: "Kaffeepulver", total: 1, packed: 0, status: 'pending' },
+        { name: "Pi-Schnur", total: 1, packed: 0, status: 'pending' }, { name: "Kaugummi", total: 1, packed: 0, status: 'pending' },
+        { name: "Zahncreme", total: 1, packed: 0, status: 'pending' }, { name: "Geld", total: 1, packed: 0, status: 'pending' },
+        { name: "Waschlappen", total: 1, packed: 0, status: 'pending' }, { name: "Ventilator", total: 1, packed: 0, status: 'pending' },
+        { name: "Stöpsel", total: 1, packed: 0, status: 'pending' }
     ];
 
     let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": initialItems, "To-Do": [] };
@@ -76,37 +80,10 @@
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
 
-    function toggleDone(idx) {
+    function toggleStatus(idx) {
+        const s = ['pending', 'done', 'missing', 'skip'];
         let item = data[currentList][idx];
-        item.done = !item.done;
-        save();
-    }
-
-    function render() {
-        let isTodo = currentList.toLowerCase().includes('to-do');
-        let listDiv = document.getElementById('items');
-        let sel = document.getElementById('listSelect');
-        
-        sel.innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
-        
-        listDiv.innerHTML = data[currentList].map((item, idx) => `
-            <div class="item">
-                <div class="info ${item.done ? 'done' : ''}" onclick="isTodo ? toggleDone(${idx}) : editItem(${idx})">
-                    ${item.name} ${!isTodo ? `<span style="opacity:0.5; margin-left:10px">${item.packed}/${item.total}</span>` : ''}
-                </div>
-                ${!isTodo ? `
-                    <div class="controls">
-                        <button onclick="updatePacked(${idx}, -1)">-</button>
-                        <button onclick="updatePacked(${idx}, 1)">+</button>
-                    </div>` : ''}
-                <span class="del" onclick="data[currentList].splice(${idx},1); save()">✕</span>
-            </div>
-        `).join('');
-    }
-
-    function updatePacked(idx, delta) {
-        let item = data[currentList][idx];
-        item.packed = Math.max(0, Math.min(item.total, item.packed + delta));
+        item.status = s[(s.indexOf(item.status) + 1) % 4];
         save();
     }
 
@@ -119,16 +96,27 @@
         save();
     }
 
-    function addList() { 
-        let n = prompt("Name der neuen Liste:"); 
-        if (n && !data[n]) { data[n] = []; save(); } 
+    function render() {
+        let listDiv = document.getElementById('items');
+        document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
+        
+        listDiv.innerHTML = data[currentList].map((item, idx) => `
+            <div class="row-wrapper">
+                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})">
+                    <div class="status-dot" style="background:var(--${item.status=='done'?'green':item.status=='missing'?'red':item.status=='skip'?'grey':'grey'})" onclick="toggleStatus(${idx})"></div>
+                    <div class="info" onclick="editItem(${idx})">${item.total}x ${item.name}</div>
+                </div>
+                <button class="del-btn" onclick="data[currentList].splice(${idx},1); save()">Löschen</button>
+            </div>
+        `).join('');
     }
 
-    function addItem() { 
-        let n = prompt("Bezeichnung:"); 
-        if (n) { data[currentList].push({ name:n, total:1, packed:0, done:false }); save(); } 
-    }
+    let tx = 0;
+    function ts(e, i) { tx = e.touches[0].clientX; }
+    function te(e, i) { if (tx - e.changedTouches[0].clientX > 50) document.getElementById('card-'+i).style.transform = 'translateX(-80px)'; else document.getElementById('card-'+i).style.transform = 'translateX(0)'; }
 
+    function addList() { let n = prompt("Name:"); if (n && !data[n]) { data[n] = []; save(); } }
+    function addItem() { let n = prompt("Gegenstand:"); if (n) { data[currentList].push({ name:n, total:1, status:'pending' }); save(); } }
     render();
 </script>
 </body>

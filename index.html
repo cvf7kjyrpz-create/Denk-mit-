@@ -34,58 +34,20 @@
 </div>
 
 <script>
-    const initialItems = [
-        { name: "Handtuch groß", total: 1, packed: 0, status: 'pending' }, { name: "Handtuch klein", total: 2, packed: 0, status: 'pending' },
-        { name: "Boxer", total: 8, packed: 0, status: 'pending' }, { name: "Shirt normal", total: 6, packed: 0, status: 'pending' },
-        { name: "Shirt bw", total: 8, packed: 0, status: 'pending' }, { name: "Socken schwarz bw", total: 9, packed: 0, status: 'pending' },
-        { name: "Socken Sport", total: 8, packed: 0, status: 'pending' }, { name: "Sportanzug bw", total: 1, packed: 0, status: 'pending' },
-        { name: "Pullover Bw", total: 3, packed: 0, status: 'pending' }, { name: "Sportanzug normal", total: 2, packed: 0, status: 'pending' },
-        { name: "SportSchuhe / Hallenschuhe", total: 1, packed: 0, status: 'pending' }, { name: "Badelatschen", total: 1, packed: 0, status: 'pending' },
-        { name: "Combatshirt", total: 3, packed: 0, status: 'pending' }, { name: "Weste / Kobbel", total: 1, packed: 0, status: 'pending' },
-        { name: "Ersatzstiefel", total: 2, packed: 0, status: 'pending' }, { name: "Helm", total: 1, packed: 0, status: 'pending' },
-        { name: "Barett", total: 1, packed: 0, status: 'pending' }, { name: "Schießbrille", total: 1, packed: 0, status: 'pending' },
-        { name: "Sichtschutz Bett", total: 1, packed: 0, status: 'pending' }, { name: "Kleiderbügel", total: 1, packed: 0, status: 'pending' },
-        { name: "Handschuhe", total: 1, packed: 0, status: 'pending' }, { name: "Unterhose", total: 3, packed: 0, status: 'pending' },
-        { name: "Blaumann", total: 2, packed: 0, status: 'pending' }, { name: "Arbeitsschutzschuhe", total: 1, packed: 0, status: 'pending' },
-        { name: "Panzerkombi", total: 1, packed: 0, status: 'pending' }, { name: "Taschenlampe", total: 1, packed: 0, status: 'pending' },
-        { name: "Unterlagen SPz", total: 1, packed: 0, status: 'pending' }, { name: "Uniform - Hose und Bluse", total: 1, packed: 0, status: 'pending' },
-        { name: "Parker grün", total: 1, packed: 0, status: 'pending' }, { name: "Ersatzmütze / Wintermütze", total: 1, packed: 0, status: 'pending' },
-        { name: "Tablet", total: 1, packed: 0, status: 'pending' }, { name: "Wäschesack", total: 1, packed: 0, status: 'pending' },
-        { name: "Tee", total: 1, packed: 0, status: 'pending' }, { name: "Steckdose", total: 1, packed: 0, status: 'pending' },
-        { name: "Tasse (thermo)", total: 1, packed: 0, status: 'pending' }, { name: "Schlösser", total: 3, packed: 0, status: 'pending' },
-        { name: "Ladegerät", total: 1, packed: 0, status: 'pending' }, { name: "Kopfhörer", total: 1, packed: 0, status: 'pending' },
-        { name: "Kulturbeutel", total: 1, packed: 0, status: 'pending' }, { name: "Powerbank", total: 1, packed: 0, status: 'pending' },
-        { name: "Ersatzbrille", total: 1, packed: 0, status: 'pending' }, { name: "Magnesium", total: 1, packed: 0, status: 'pending' },
-        { name: "Taschentücher", total: 1, packed: 0, status: 'pending' }, { name: "Remmi", total: 1, packed: 0, status: 'pending' },
-        { name: "Camping Stuhl", total: 1, packed: 0, status: 'pending' }, { name: "Kuscheltier", total: 1, packed: 0, status: 'pending' },
-        { name: "Bettwäsche", total: 1, packed: 0, status: 'pending' }, { name: "Waschpad", total: 1, packed: 0, status: 'pending' },
-        { name: "Besteck", total: 1, packed: 0, status: 'pending' }, { name: "Teller (Dose grün)", total: 1, packed: 0, status: 'pending' },
-        { name: "Nudel Yamyam", total: 1, packed: 0, status: 'pending' }, { name: "Kuli", total: 1, packed: 0, status: 'pending' },
-        { name: "Kissen (Normal)", total: 1, packed: 0, status: 'pending' }, { name: "Nachtlicht", total: 1, packed: 0, status: 'pending' },
-        { name: "Kopfkissen Luft normal", total: 1, packed: 0, status: 'pending' }, { name: "Luftmatratze + Überzug", total: 1, packed: 0, status: 'pending' },
-        { name: "Wasserkocher", total: 1, packed: 0, status: 'pending' }, { name: "Schlafsack", total: 1, packed: 0, status: 'pending' },
-        { name: "Meldeblock", total: 1, packed: 0, status: 'pending' }, { name: "Luftmatratze", total: 1, packed: 0, status: 'pending' },
-        { name: "Switch, Ladegerät, Spiele", total: 1, packed: 0, status: 'pending' }, { name: "Toilettenpapier feucht", total: 1, packed: 0, status: 'pending' },
-        { name: "Creme", total: 1, packed: 0, status: 'pending' }, { name: "Deo Stick", total: 1, packed: 0, status: 'pending' },
-        { name: "Duschbad", total: 1, packed: 0, status: 'pending' }, { name: "Head&Shulders", total: 1, packed: 0, status: 'pending' },
-        { name: "Uhrenschutz", total: 1, packed: 0, status: 'pending' }, { name: "Rasierer elektrisch", total: 1, packed: 0, status: 'pending' },
-        { name: "Zahnbürste", total: 1, packed: 0, status: 'pending' }, { name: "Kaffeepulver", total: 1, packed: 0, status: 'pending' },
-        { name: "Pi-Schnur", total: 1, packed: 0, status: 'pending' }, { name: "Kaugummi", total: 1, packed: 0, status: 'pending' },
-        { name: "Zahncreme", total: 1, packed: 0, status: 'pending' }, { name: "Geld", total: 1, packed: 0, status: 'pending' },
-        { name: "Waschlappen", total: 1, packed: 0, status: 'pending' }, { name: "Ventilator", total: 1, packed: 0, status: 'pending' },
-        { name: "Stöpsel", total: 1, packed: 0, status: 'pending' }
-    ];
-
-    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": initialItems, "To-Do": [] };
+    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": [], "To-Do": [] };
     let currentList = Object.keys(data)[0];
 
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
     
     function toggleStatus(idx) { 
-        const s = ['pending', 'done', 'skip']; 
-        let item = data[currentList][idx]; 
-        item.status = s[(s.indexOf(item.status) + 1) % 3]; 
+        let item = data[currentList][idx];
+        if (currentList.toLowerCase().includes('to-do')) {
+            item.status = (item.status === 'done') ? 'pending' : 'done';
+        } else {
+            const s = ['pending', 'done', 'skip']; 
+            item.status = s[(s.indexOf(item.status || 'pending') + 1) % 3]; 
+        }
         save(); 
     }
 
@@ -97,12 +59,18 @@
 
     function editItem(idx) {
         let item = data[currentList][idx];
-        let n = prompt("Name:", item.name); if (n !== null) item.name = n;
+        let n = prompt("Name bearbeiten:", item.name); 
+        if (n !== null) item.name = n;
         if (!currentList.toLowerCase().includes('to-do')) {
-            let t = prompt("Gesamtmenge:", item.total); if (t !== null) item.total = parseInt(t) || 1;
+            let t = prompt("Gesamtmenge bearbeiten:", item.total); 
+            if (t !== null) item.total = parseInt(t) || 1;
         }
         save();
     }
+
+    let pressTimer;
+    function startPress(idx) { pressTimer = setTimeout(() => moveItem(idx), 800); }
+    function endPress() { clearTimeout(pressTimer); }
 
     function moveItem(idx) {
         let newIdx = prompt("Verschieben nach Position (1-" + data[currentList].length + "):");
@@ -119,14 +87,16 @@
         document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
         
         listDiv.innerHTML = data[currentList].map((item, idx) => {
-            let color = (item.status == 'done' || (item.packed > 0 && item.packed == item.total)) ? 'var(--green)' : (item.packed > 0 ? 'var(--yellow)' : 'var(--grey)');
+            let color = (item.status == 'done') ? 'var(--green)' : (item.packed > 0 && item.packed < item.total ? 'var(--yellow)' : 'var(--grey)');
             if (item.status == 'skip') color = 'var(--grey)';
             
             return `
             <div class="row-wrapper">
-                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})" onclick="if(event.target.className=='info') moveItem(${idx})">
+                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx}); startPress(${idx})" ontouchend="te(event, ${idx}); endPress()" onmousedown="startPress(${idx})" onmouseup="endPress()">
                     <div class="status-dot" style="background:${color}" onclick="toggleStatus(${idx})"></div>
-                    <div class="info ${item.status=='skip' ? 'skip' : ''}" onclick="editItem(${idx})">${!isTodo ? item.total + 'x ' : ''}${item.name}</div>
+                    <div class="info ${item.status=='skip' || item.status=='done' ? 'skip' : ''}" onclick="editItem(${idx})">
+                        ${!isTodo ? item.total + 'x ' : ''}${item.name}
+                    </div>
                     ${!isTodo ? `
                     <div style="font-size:0.8em; margin-right:10px">${item.packed}/${item.total}</div>
                     <div class="controls">

@@ -14,7 +14,7 @@
         .card { background: var(--panel); padding: 0 10px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 10px; position: absolute; width: 100%; box-sizing: border-box; z-index: 2; transition: transform 0.2s; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
         .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; }
-        .skip { text-decoration: line-through; opacity: 0.5; }
+        .skip { text-decoration: line-through; opacity: 0.4; }
         .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; z-index: 1; }
         .controls { display: flex; gap: 5px; }
         button { background: #222; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
@@ -98,7 +98,9 @@
     function editItem(idx) {
         let item = data[currentList][idx];
         let n = prompt("Name:", item.name); if (n !== null) item.name = n;
-        let t = prompt("Gesamtmenge:", item.total); if (t !== null) item.total = parseInt(t) || 1;
+        if (!currentList.toLowerCase().includes('to-do')) {
+            let t = prompt("Gesamtmenge:", item.total); if (t !== null) item.total = parseInt(t) || 1;
+        }
         save();
     }
 
@@ -112,23 +114,25 @@
     }
 
     function render() {
+        let isTodo = currentList.toLowerCase().includes('to-do');
         let listDiv = document.getElementById('items');
         document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
         
         listDiv.innerHTML = data[currentList].map((item, idx) => {
-            let color = item.status == 'done' ? 'var(--green)' : (item.packed > 0 ? 'var(--yellow)' : 'var(--grey)');
+            let color = (item.status == 'done' || (item.packed > 0 && item.packed == item.total)) ? 'var(--green)' : (item.packed > 0 ? 'var(--yellow)' : 'var(--grey)');
             if (item.status == 'skip') color = 'var(--grey)';
             
             return `
             <div class="row-wrapper">
-                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})" oncontextmenu="event.preventDefault(); moveItem(${idx})">
+                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})" onclick="if(event.target.className=='info') moveItem(${idx})">
                     <div class="status-dot" style="background:${color}" onclick="toggleStatus(${idx})"></div>
-                    <div class="info ${item.status=='skip' ? 'skip' : ''}" onclick="editItem(${idx})">${item.total}x ${item.name}</div>
+                    <div class="info ${item.status=='skip' ? 'skip' : ''}" onclick="editItem(${idx})">${!isTodo ? item.total + 'x ' : ''}${item.name}</div>
+                    ${!isTodo ? `
                     <div style="font-size:0.8em; margin-right:10px">${item.packed}/${item.total}</div>
                     <div class="controls">
                         <button onclick="updatePacked(${idx}, -1)">-</button>
                         <button onclick="updatePacked(${idx}, 1)">+</button>
-                    </div>
+                    </div>` : ''}
                 </div>
                 <button class="del-btn" onclick="data[currentList].splice(${idx},1); save()">Löschen</button>
             </div>

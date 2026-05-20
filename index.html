@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Pack & To-Do</title>
+    <style>
+        :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --red: #e74c3c; --grey: #444; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        .row-wrapper { position: relative; overflow: hidden; margin-bottom: 5px; }
+        .card { background: var(--panel); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; }
+        .del-btn { position: absolute; right: 0; top: 0; bottom: 0; background: var(--red); color: white; border: none; padding: 0 15px; border-radius: 8px; display: none; }
+        header { display: flex; gap: 10px; margin-bottom: 15px; }
+        select, input { background: var(--panel); color: white; padding: 6px; border: 1px solid #333; border-radius: 4px; }
+        button { background: #222; border: 1px solid #555; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <select id="listSelect" onchange="switchList()"></select>
+        <button onclick="addList()">+</button>
+    </header>
+    <div id="items"></div>
+    <button onclick="addItem()" style="width: 100%; margin-top: 15px;">+ Hinzufügen</button>
+</div>
+
+<script>
+    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": [], "Urlaub": [], "To-Do": [] };
+    let currentList = "Übungsplatz";
+
+    function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
+    function switchList() { currentList = document.getElementById('listSelect').value; render(); }
+
+    function toggleStatus(idx) {
+        const s = ['pending', 'done', 'missing', 'skip'];
+        let item = data[currentList][idx];
+        item.status = s[(s.indexOf(item.status || 'pending') + 1) % 4];
+        save();
+    }
+
+    function render() {
+        let isTodo = currentList.toLowerCase().includes('to-do');
+        let listDiv = document.getElementById('items');
+        listDiv.innerHTML = data[currentList].map((item, idx) => `
+            <div class="row-wrapper" id="row-${idx}">
+                <div class="card" ontouchstart="handleTouchStart(event, ${idx})" ontouchend="handleTouchEnd(event, ${idx})">
+                    <div class="status-dot" style="background:var(--${item.status=='done'?'green':item.status=='missing'?'red':item.status=='skip'?'grey':'grey'})" onclick="toggleStatus(${idx})"></div>
+                    <div class="info" onclick="editItem(${idx})">${item.name}</div>
+                    ${!isTodo ? `
+                        <div style="font-size:0.8em; font-weight:bold;">${item.packed}/${item.total}</div>
+                        <div style="display:flex; gap:3px;">
+                            <button onclick="data[currentList][${idx}].packed = Math.max(0, data[currentList][${idx}].packed-1); save()">-</button>
+                            <button onclick="data[currentList][${idx}].packed = Math.min(data[currentList][${idx}].total, data[currentList][${idx}].packed+1); save()">+</button>
+                        </div>` : ''}
+                </div>
+                <button class="del-btn" id="del-${idx}" onclick="data[currentList].splice(${idx},1); save()">Löschen</button>
+            </div>
+        `).join('');
+    }
+
+    function editItem(idx) {
+        let item = data[currentList][idx];
+        let n = prompt("Name:", item.name);
+        if (n !== null) item.name = n;
+        if (!currentList.toLowerCase().includes('to-do')) {
+            let t = prompt("Gesamtmenge:", item.total);
+            if (t !== null) item.total = parseInt(t) || 1;
+        }
+        save();
+    }
+
+    let touchX = 0;
+    function handleTouchStart(e, idx) { touchX = e.changedTouches[0].screenX; }
+    function handleTouchEnd(e, idx) {
+        if (touchX - e.changedTouches[0].screenX > 50) document.getElementById('del-'+idx).style.display = 'block';
+        else document.getElementById('del-'+idx).style.display = 'none';
+    }
+
+    function addList() { let n = prompt("Name der neuen Liste:"); if (n) { data[n] = []; save(); initSelect(); } }
+    function addItem() { let n = prompt("Bezeichnung:"); if (n) { data[currentList].push({ name:n, total:1, packed:0, status:'pending' }); save(); } }
+    function initSelect() { document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join(''); }
+
+    initSelect(); render();
+</script>
+</body>
+</html>

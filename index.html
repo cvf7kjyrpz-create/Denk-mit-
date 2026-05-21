@@ -6,8 +6,15 @@
     <title>Pack-App</title>
     <style>
         :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --yellow: #f1c40f; --grey: #444; --red: #e74c3c; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 5px; overflow-x: hidden; }
-        .container { max-width: 500px; margin: 0 auto; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Feste obere Leiste */
+        .fixed-header { padding: 10px; background: var(--bg); border-bottom: 1px solid #333; z-index: 10; }
+        
+        /* Scrollbarer Bereich */
+        #items-container { flex: 1; overflow-y: auto; padding: 10px; }
+        
+        .container { max-width: 500px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; height: 100%; }
         .row-wrapper { background: var(--panel); margin-bottom: 3px; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; height: 32px; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .info { flex-grow: 1; font-size: 0.8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -20,17 +27,22 @@
 <body>
 
 <div class="container">
-    <div id="stats" style="margin-bottom:5px; font-size: 0.8em;"></div>
-    <input type="text" id="search" placeholder="Suchen..." oninput="render()" style="width:100%; box-sizing:border-box; margin-bottom:5px; padding: 5px;">
-    <header style="display:flex; gap:3px; margin-bottom:5px;">
-        <select id="listSelect" onchange="switchList()"></select>
-        <button onclick="addList()">+</button>
-        <button onclick="resetList()">0</button>
-        <button onclick="saveBackup()">Save</button>
-        <button onclick="loadBackup()">Load</button>
-    </header>
-    <div id="items"></div>
-    <button onclick="addItem()" style="width:100%; margin-top:5px; padding: 8px;">+ Hinzufügen</button>
+    <div class="fixed-header">
+        <div id="stats" style="margin-bottom:5px; font-size: 0.8em;"></div>
+        <input type="text" id="search" placeholder="Suchen..." oninput="render()" style="width:100%; box-sizing:border-box; margin-bottom:5px; padding: 5px;">
+        <div style="display:flex; gap:3px;">
+            <select id="listSelect" onchange="switchList()"></select>
+            <button onclick="addList()">+</button>
+            <button onclick="resetList()">0</button>
+            <button onclick="saveBackup()">Save</button>
+            <button onclick="loadBackup()">Load</button>
+        </div>
+    </div>
+
+    <div id="items-container">
+        <div id="items"></div>
+        <button onclick="addItem()" style="width:100%; margin-top:5px; padding: 8px;">+ Hinzufügen</button>
+    </div>
 </div>
 
 <script>

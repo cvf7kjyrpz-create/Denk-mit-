@@ -8,25 +8,29 @@
         :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --yellow: #f1c40f; --grey: #444; --red: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 5px; overflow-x: hidden; }
         .container { max-width: 500px; margin: 0 auto; }
-        .row-wrapper { background: var(--panel); margin-bottom: 3px; padding: 5px 10px; border-radius: 6px; display: flex; align-items: center; gap: 8px; height: 35px; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-        .info { flex-grow: 1; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row-wrapper { background: var(--panel); margin-bottom: 3px; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; height: 32px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .info { flex-grow: 1; font-size: 0.8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .skip { text-decoration: line-through; opacity: 0.5; }
-        button, select, input { background: #222; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; }
-        .controls { display: flex; gap: 4px; align-items: center; }
+        button, select, input { background: #222; border: 1px solid #555; color: white; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.75em; }
+        .controls { display: flex; gap: 3px; align-items: center; }
+        .del-btn { background: var(--red); color: white; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="stats" style="margin-bottom:5px; font-size: 0.8em;"></div>
-    <input type="text" id="search" placeholder="Suchen..." oninput="render()" style="width:100%; box-sizing:border-box; margin-bottom:5px;">
-    <header style="display:flex; gap:5px;">
+    <input type="text" id="search" placeholder="Suchen..." oninput="render()" style="width:100%; box-sizing:border-box; margin-bottom:5px; padding: 5px;">
+    <header style="display:flex; gap:3px; margin-bottom:5px;">
         <select id="listSelect" onchange="switchList()"></select>
         <button onclick="addList()">+</button>
         <button onclick="resetList()">0</button>
+        <button onclick="saveBackup()">Save</button>
+        <button onclick="loadBackup()">Load</button>
     </header>
     <div id="items"></div>
+    <button onclick="addItem()" style="width:100%; margin-top:5px; padding: 8px;">+ Hinzufügen</button>
 </div>
 
 <script>
@@ -88,6 +92,9 @@
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
     function resetList() { if(confirm("Alles auf 0?")) { data[currentList].forEach(i => { if(i.packed !== undefined) i.packed = 0; i.status = 'pending'; }); save(); } }
+    function saveBackup() { prompt("Backup:", JSON.stringify(data)); }
+    function loadBackup() { let i = prompt("Einfügen:"); if(i) { data = JSON.parse(i); save(); } }
+    function deleteItem(idx) { data[currentList].splice(idx, 1); save(); }
 
     function updatePacked(idx, delta) {
         let item = data[currentList][idx];
@@ -120,10 +127,9 @@
                         <button onclick="updatePacked(${item.originalIdx}, -1)">-</button>
                         <span>${item.packed}/${item.total}</span>
                         <button onclick="updatePacked(${item.originalIdx}, 1)">+</button>
-                        <button onclick="toggleSkip(${item.originalIdx})" style="background:var(--grey)">X</button>
-                    ` : `
-                        <button onclick="toggleSkip(${item.originalIdx})" style="background:${item.status=='skip'?'var(--red)':'var(--grey)'}">X</button>
-                    `}
+                    ` : ''}
+                    <button onclick="toggleSkip(${item.originalIdx})" style="background:var(--grey)">X</button>
+                    <button class="del-btn" onclick="deleteItem(${item.originalIdx})">–</button>
                 </div>
             </div>
         `).join('');

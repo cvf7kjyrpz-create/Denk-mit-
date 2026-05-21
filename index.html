@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pack-App</title>
     <style>
-        :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --grey: #444; --red: #e74c3c; }
+        :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --yellow: #f1c40f; --grey: #444; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; overflow-x: hidden; }
         .container { max-width: 500px; margin: 0 auto; }
         .row-wrapper { background: var(--panel); margin-bottom: 5px; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
         .info { flex-grow: 1; font-size: 0.9em; }
         .skip { text-decoration: line-through; opacity: 0.4; }
         button, select, input { background: #222; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; cursor: pointer; }
@@ -93,18 +94,21 @@
     function saveBackup() { prompt("Backup:", JSON.stringify(data)); }
     function loadBackup() { let i = prompt("Einfügen:"); if(i) { data = JSON.parse(i); save(); } }
 
+    function cycleStatus(idx) {
+        let item = data[currentList][idx];
+        const states = ['pending', 'done', 'skip'];
+        let next = (states.indexOf(item.status) + 1) % 3;
+        item.status = states[next];
+        if (item.total !== undefined) item.packed = (item.status === 'done') ? item.total : (item.status === 'pending' ? 0 : item.packed);
+        save();
+    }
+
     function updatePacked(idx, delta) {
         let item = data[currentList][idx];
         if (item.total !== undefined) {
             item.packed = Math.max(0, Math.min(item.total, item.packed + delta));
             item.status = (item.packed >= item.total) ? 'done' : 'pending';
         }
-        save();
-    }
-
-    function toggleSkip(idx) {
-        let item = data[currentList][idx];
-        item.status = (item.status === 'skip') ? 'pending' : 'skip';
         save();
     }
 
@@ -115,20 +119,16 @@
         
         let filtered = items.filter(i => i.name.toLowerCase().includes(document.getElementById('search').value.toLowerCase()));
         
-        document.getElementById('stats').innerText = `Erledigt: ${data[currentList].filter(i => i.status !== 'pending').length} / ${data[currentList].length}`;
-
         document.getElementById('items').innerHTML = filtered.map(item => `
             <div class="row-wrapper ${item.status !== 'pending' ? 'skip' : ''}">
+                <div class="status-dot" style="background:${item.status=='done'?'var(--green)':(item.status=='skip'?'var(--grey)':'var(--yellow)')}" onclick="cycleStatus(${item.originalIdx})"></div>
                 <div class="info">${!isTodo ? item.total + 'x ' : ''}${item.name}</div>
                 <div class="controls">
                     ${!isTodo ? `
                         <button onclick="updatePacked(${item.originalIdx}, -1)">-</button>
                         <span>${item.packed}/${item.total}</span>
                         <button onclick="updatePacked(${item.originalIdx}, 1)">+</button>
-                        <button onclick="toggleSkip(${item.originalIdx})" style="background:${item.status=='skip'?'var(--red)':'var(--grey)'}">X</button>
-                    ` : `
-                        <button onclick="toggleSkip(${item.originalIdx})" style="background:${item.status=='done'?'var(--green)':'var(--grey)'}">OK</button>
-                    `}
+                    ` : ''}
                 </div>
             </div>
         `).join('');

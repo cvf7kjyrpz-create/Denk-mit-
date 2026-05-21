@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Pack-App</title>
     <style>
         :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --yellow: #f1c40f; --grey: #444; --red: #e74c3c; }
@@ -13,29 +11,34 @@
         .row-wrapper { position: relative; overflow: hidden; margin-bottom: 5px; height: 45px; }
         .card { background: var(--panel); padding: 0 10px; height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 10px; position: absolute; width: 100%; box-sizing: border-box; z-index: 2; transition: transform 0.2s; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
-        .info { flex-grow: 1; font-size: 0.9em; cursor: pointer; }
+        .info { flex-grow: 1; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         .skip { text-decoration: line-through; opacity: 0.4; }
         .pos-nr { font-size: 0.7em; color: #666; width: 20px; }
         .del-btn { position: absolute; right: 0; top: 0; bottom: 5px; background: var(--red); color: white; border: none; padding: 0 20px; border-radius: 8px; z-index: 1; }
         .controls { display: flex; gap: 5px; }
-        button { background: #222; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        header { display: flex; gap: 10px; margin-bottom: 15px; }
-        select { flex-grow: 1; background: var(--panel); color: white; padding: 8px; border: 1px solid #333; border-radius: 4px; }
+        button, input, select { background: #222; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; cursor: pointer; }
+        header { display: flex; gap: 5px; margin-bottom: 10px; }
+        #search { width: 100%; margin-bottom: 10px; padding: 8px; background: #111; color: white; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div id="stats" style="margin-bottom:10px; font-size: 0.9em;"></div>
+    <input type="text" id="search" placeholder="Suchen..." oninput="render()">
     <header>
         <select id="listSelect" onchange="switchList()"></select>
         <button onclick="addList()">+</button>
+        <button onclick="resetList()">0</button>
+        <button onclick="saveBackup()">Save</button>
+        <button onclick="loadBackup()">Load</button>
     </header>
     <div id="items"></div>
-    <button onclick="addItem()" style="width: 100%; margin-top: 15px; padding: 10px;">+ Hinzufügen</button>
+    <button onclick="addItem()" style="width: 100%; margin-top: 15px;">+ Hinzufügen</button>
 </div>
 
 <script>
-    const defaultList = [
+    const packItems = [
         { name: "Handtuch groß", total: 1, packed: 0, status: 'pending' }, { name: "Handtuch klein", total: 2, packed: 0, status: 'pending' },
         { name: "Boxer", total: 8, packed: 0, status: 'pending' }, { name: "Shirt normal", total: 6, packed: 0, status: 'pending' },
         { name: "Shirt bw", total: 8, packed: 0, status: 'pending' }, { name: "Socken schwarz bw", total: 9, packed: 0, status: 'pending' },
@@ -49,7 +52,7 @@
         { name: "Handschuhe", total: 1, packed: 0, status: 'pending' }, { name: "Unterhose", total: 3, packed: 0, status: 'pending' },
         { name: "Blaumann", total: 2, packed: 0, status: 'pending' }, { name: "Arbeitsschutzschuhe", total: 1, packed: 0, status: 'pending' },
         { name: "Panzerkombi", total: 1, packed: 0, status: 'pending' }, { name: "Taschenlampe", total: 1, packed: 0, status: 'pending' },
-        { name: "Unterlagen SPz", total: 1, packed: 0, status: 'pending' }, { name: "Uniform - Hose", total: 1, packed: 0, status: 'pending' },
+        { name: "Unterlagen SPz", total: 1, packed: 0, status: 'pending' }, { name: "Uniform - Hose und Bluse", total: 1, packed: 0, status: 'pending' },
         { name: "Parker grün", total: 1, packed: 0, status: 'pending' }, { name: "Ersatzmütze / Wintermütze grün / zivil", total: 1, packed: 0, status: 'pending' },
         { name: "Tablet", total: 1, packed: 0, status: 'pending' }, { name: "Wäschesack", total: 1, packed: 0, status: 'pending' },
         { name: "Tee", total: 1, packed: 0, status: 'pending' }, { name: "Steckdose", total: 1, packed: 0, status: 'pending' },
@@ -77,36 +80,52 @@
         { name: "Stöpsel", total: 1, packed: 0, status: 'pending' }
     ];
 
-    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": defaultList, "To-Do": [] };
+    const initialTodo = [
+        { name: "Yvonne wegen Riester oder was ist da los", status: 'pending' }, { name: "Konserven kaufen", status: 'pending' },
+        { name: "StarWars Bilder machen und einstellen", status: 'pending' }, { name: "Überweisung Orthopäde Berlin", status: 'pending' },
+        { name: "Lebensversicherung nachfragen, ob auf Yvonne geschrieben", status: 'pending' }, { name: "Silberwert stimmt nicht in der App", status: 'pending' },
+        { name: "Hausverwaltung wegen Klingel anrufen", status: 'pending' }, { name: "Microsoft kündigen", status: 'pending' },
+        { name: "KI Bild von Puppe die Klamotten trägt", status: 'pending' }, { name: "Herr Reich wegen Nebenkosten", status: 'done' },
+        { name: "Joel Paket", status: 'done' }, { name: "Schulden Joel 1125€", status: 'pending' },
+        { name: "Sand beschriften", status: 'pending' }, { name: "Mario Allstars", status: 'pending' }
+    ];
+
+    let data = JSON.parse(localStorage.getItem('packData')) || { "Übungsplatz": packItems, "To-Do": initialTodo };
     let currentList = Object.keys(data)[0];
 
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
     
+    function resetList() {
+        if(confirm("Alles auf Null setzen?")) {
+            data[currentList].forEach(i => { if(i.packed !== undefined) i.packed = 0; i.status = 'pending'; });
+            save();
+        }
+    }
+
+    function saveBackup() { prompt("Backup-Daten (kopieren):", JSON.stringify(data)); }
+    function loadBackup() { let input = prompt("Backup-Daten einfügen:"); if(input) { data = JSON.parse(input); save(); } }
+
     function toggleStatus(idx) { 
         let item = data[currentList][idx];
-        if (currentList === "To-Do") {
-            item.status = (item.status === 'done') ? 'pending' : 'done';
-        } else {
-            const s = ['pending', 'done', 'skip']; 
-            item.status = s[(s.indexOf(item.status || 'pending') + 1) % 3]; 
-        }
+        if (currentList === "To-Do") item.status = (item.status === 'done') ? 'pending' : 'done';
+        else { const s = ['pending', 'done', 'skip']; item.status = s[(s.indexOf(item.status || 'pending') + 1) % 3]; }
         save(); 
     }
 
     function updatePacked(idx, delta) {
         let item = data[currentList][idx];
-        item.packed = Math.max(0, Math.min(item.total, item.packed + delta));
-        save();
+        if (item.total !== undefined) {
+            item.packed = Math.max(0, Math.min(item.total, item.packed + delta));
+            save();
+        }
     }
 
-    function editItem(idx) {
-        let item = data[currentList][idx];
-        let n = prompt("Name:", item.name); 
-        if (n !== null) item.name = n;
-        if (currentList !== "To-Do") {
-            let t = prompt("Anzahl:", item.total); 
-            if (t !== null) item.total = parseInt(t) || 1;
+    function editItem(i) {
+        let item = data[currentList][i];
+        let n = prompt("Name:", item.name); if(n) item.name = n;
+        if (item.total !== undefined) {
+            let t = prompt("Gesamtmenge:", item.total); if(t) item.total = parseInt(t) || 1;
         }
         save();
     }
@@ -123,44 +142,39 @@
     function render() {
         let isTodo = (currentList === "To-Do");
         let listDiv = document.getElementById('items');
-        document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
+        let search = document.getElementById('search').value.toLowerCase();
         
-        listDiv.innerHTML = data[currentList].map((item, idx) => {
-            let color = (item.status == 'done') ? 'var(--green)' : (isTodo ? 'var(--grey)' : (item.packed > 0 && item.packed < item.total ? 'var(--yellow)' : (item.packed == item.total && item.total > 0 ? 'var(--green)' : 'var(--grey)')));
-            if (item.status == 'skip') color = 'var(--grey)';
-            
-            return `
+        let items = data[currentList].map((item, i) => ({...item, originalIdx: i}));
+        items.sort((a, b) => (a.status === 'done' ? 1 : -1) - (b.status === 'done' ? 1 : -1));
+        let filtered = items.filter(i => i.name.toLowerCase().includes(search));
+        
+        document.getElementById('stats').innerText = `Erledigt: ${data[currentList].filter(i => i.status === 'done').length} / ${data[currentList].length}`;
+
+        listDiv.innerHTML = filtered.map((item, idx) => `
             <div class="row-wrapper">
-                <div class="card" id="card-${idx}" ontouchstart="ts(event, ${idx})" ontouchend="te(event, ${idx})" oncontextmenu="event.preventDefault(); moveItem(${idx})">
+                <div class="card" id="card-${item.originalIdx}" ontouchstart="ts(event, ${item.originalIdx})" ontouchend="te(event, ${item.originalIdx})" oncontextmenu="event.preventDefault(); moveItem(${item.originalIdx})">
                     <div class="pos-nr">${idx + 1}</div>
-                    <div class="status-dot" style="background:${color}" onclick="toggleStatus(${idx})"></div>
-                    <div class="info ${item.status=='skip' || (isTodo && item.status=='done') ? 'skip' : ''}" onclick="editItem(${idx})">
-                        ${!isTodo ? item.total + 'x ' : ''}${item.name}
+                    <div class="status-dot" style="background:${item.status=='done'?'var(--green)':(item.status=='skip'?'var(--grey)':'var(--yellow)')}" onclick="toggleStatus(${item.originalIdx})"></div>
+                    <div class="info ${item.status=='done'||item.status=='skip'?'skip':''}" onclick="editItem(${item.originalIdx})">
+                        ${!isTodo ? (item.total + 'x ') : ''}${item.name}
                     </div>
                     ${!isTodo ? `
-                    <div style="font-size:0.8em; margin-right:10px">${item.packed}/${item.total}</div>
-                    <div class="controls">
-                        <button onclick="updatePacked(${idx}, -1)">-</button>
-                        <button onclick="updatePacked(${idx}, 1)">+</button>
-                    </div>` : ''}
+                    <div style="font-size:0.8em; margin-right:5px">${item.packed}/${item.total}</div>
+                    <div class="controls"><button onclick="updatePacked(${item.originalIdx}, -1)">-</button><button onclick="updatePacked(${item.originalIdx}, 1)">+</button></div>` : ''}
                 </div>
-                <button class="del-btn" onclick="data[currentList].splice(${idx},1); save()">Löschen</button>
+                <button class="del-btn" onclick="data[currentList].splice(${item.originalIdx},1); save()">Löschen</button>
             </div>
-            `;
-        }).join('');
+        `).join('');
     }
 
     let tx = 0;
     function ts(e, i) { tx = e.touches[0].clientX; }
-    function te(e, i) { 
-        let c = document.getElementById('card-'+i); 
-        if (tx - e.changedTouches[0].clientX > 50) c.style.transform = 'translateX(-80px)'; 
-        else if (e.changedTouches[0].clientX - tx > 50) moveItem(i);
-        else c.style.transform = 'translateX(0)'; 
-    }
+    function te(e, i) { let c = document.getElementById('card-'+i); if (tx - e.changedTouches[0].clientX > 50) c.style.transform = 'translateX(-80px)'; else c.style.transform = 'translateX(0)'; }
 
-    function addList() { let n = prompt("Name:"); if (n && !data[n]) { data[n] = []; save(); } }
-    function addItem() { let n = prompt("Name:"); if (n) { data[currentList].push({ name:n, total:1, packed:0, status:'pending' }); save(); } }
+    function addList() { let n = prompt("Name:"); if(n && !data[n]) { data[n] = []; save(); } }
+    function addItem() { let n = prompt("Name:"); if(n) { data[currentList].push({ name:n, status:'pending' }); save(); } }
+    
+    document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
     render();
 </script>
 </body>

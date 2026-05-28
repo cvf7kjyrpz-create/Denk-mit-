@@ -7,10 +7,8 @@
     <style>
         :root { --bg: #000; --panel: #111; --text: #eee; --green: #2ecc71; --yellow: #f1c40f; --grey: #444; --red: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
         .fixed-header { padding: 10px; background: var(--bg); border-bottom: 1px solid #333; z-index: 10; }
         #items-container { flex: 1; overflow-y: auto; padding: 10px; }
-        
         .container { max-width: 500px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; height: 100%; }
         .row-wrapper { background: var(--panel); margin-bottom: 3px; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; min-height: 35px; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -28,18 +26,20 @@
     <div class="fixed-header">
         <div id="stats" style="margin-bottom:5px; font-size: 0.8em;"></div>
         <input type="text" id="search" placeholder="Suchen..." oninput="render()" style="width:100%; box-sizing:border-box; margin-bottom:5px; padding: 5px;">
-        <div style="display:flex; gap:3px;">
+        <div style="display:flex; gap:3px; flex-wrap: wrap;">
             <select id="listSelect" onchange="switchList()"></select>
-            <button onclick="addList()">+</button>
+            <button onclick="addList()">+ Liste</button>
+            <button onclick="deleteCurrentList()" class="del-btn">Löschen</button>
             <button onclick="resetList()">0</button>
-            <button onclick="saveBackup()">Save</button>
-            <button onclick="loadBackup()">Load</button>
+            <button onclick="addItem()">+ Art.</button>
+            <button onclick="downloadBackup()">Save</button>
+            <button onclick="uploadBackup()">Load</button>
+            <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
         </div>
     </div>
 
     <div id="items-container">
         <div id="items"></div>
-        <button onclick="addItem()" style="width:100%; margin-top:5px; padding: 8px;">+ Hinzufügen</button>
     </div>
 </div>
 
@@ -102,20 +102,51 @@
     function save() { localStorage.setItem('packData', JSON.stringify(data)); render(); }
     function switchList() { currentList = document.getElementById('listSelect').value; render(); }
     function resetList() { if(confirm("Alles auf 0?")) { data[currentList].forEach(i => { if(i.packed !== undefined) i.packed = 0; i.status = 'pending'; }); save(); } }
-    function saveBackup() { prompt("Backup:", JSON.stringify(data)); }
-    function loadBackup() { let i = prompt("Einfügen:"); if(i) { data = JSON.parse(i); save(); } }
-    function deleteItem(idx) { data[currentList].splice(idx, 1); save(); }
+
+    function downloadBackup() {
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'backup.json';
+        a.click();
+    }
+
+    function uploadBackup() { document.getElementById('fileInput').click(); }
+    function handleFileUpload(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => { data = JSON.parse(event.target.result); save(); location.reload(); };
+        reader.readAsText(file);
+    }
 
     function editItem(idx) {
         let item = data[currentList][idx];
-        let n = prompt("Name ändern:", item.name);
+        let n = prompt("Name:", item.name);
         if (n !== null) {
             item.name = n;
             if (item.total !== undefined) {
-                let t = prompt("Gesamtanzahl ändern:", item.total);
-                if (t !== null) item.total = parseInt(t) || 0;
+                let t = prompt("Menge:", item.total);
+                if (t !== null) {
+                    item.total = parseInt(t) || 0;
+                    item.packed = Math.min(item.packed, item.total);
+                    item.status = (item.packed >= item.total) ? 'done' : 'pending';
+                }
             }
             save();
+        }
+    }
+
+    function deleteItem(idx) { data[currentList].splice(idx, 1); save(); }
+
+    function deleteCurrentList() {
+        if (confirm("Liste '" + currentList + "' wirklich löschen?")) {
+            delete data[currentList];
+            let keys = Object.keys(data);
+            if (keys.length === 0) { data["Neu"] = []; keys = ["Neu"]; }
+            currentList = keys[0];
+            save();
+            location.reload();
         }
     }
 
@@ -137,12 +168,18 @@
     function render() {
         let isTodo = (currentList === "To-Do");
         let items = data[currentList].map((item, i) => ({...item, originalIdx: i}));
-        items.sort((a, b) => (a.status !== 'pending' ? 1 : -1) - (b.status !== 'pending' ? 1 : -1));
+        items.sort((a, b) => {
+            if (a.status === 'done' && b.status !== 'done') return 1;
+            if (a.status !== 'done' && b.status === 'done') return -1;
+            if (a.status === 'skip' && b.status !== 'skip') return 1;
+            if (a.status !== 'skip' && b.status === 'skip') return -1;
+            return 0;
+        });
         
         let filtered = items.filter(i => i.name.toLowerCase().includes(document.getElementById('search').value.toLowerCase()));
         
         document.getElementById('items').innerHTML = filtered.map(item => `
-            <div class="row-wrapper ${item.status !== 'pending' ? 'skip' : ''}">
+            <div class="row-wrapper ${item.status == 'skip' ? 'skip' : ''}">
                 <div class="status-dot" style="background:${item.status=='done'?'var(--green)':(item.status=='skip'?'var(--red)':'var(--yellow)')}"></div>
                 <div class="info" onclick="editItem(${item.originalIdx})">${!isTodo ? item.total + 'x ' : ''}${item.name}</div>
                 <div class="controls">
@@ -159,8 +196,15 @@
         `).join('');
     }
 
-    function addList() { let n = prompt("Name:"); if(n && !data[n]) { data[n] = []; save(); } }
-    function addItem() { let n = prompt("Name:"); if(n) { data[currentList].push({ name:n, status:'pending' }); save(); } }
+    function addList() { let n = prompt("Name:"); if(n && !data[n]) { data[n] = []; save(); location.reload(); } }
+    function addItem() {
+        let n = prompt("Name:");
+        if(n) {
+            let t = currentList !== "To-Do" ? prompt("Menge:", "1") : null;
+            data[currentList].push({ name:n, total: parseInt(t) || 1, packed: 0, status: 'pending' });
+            save();
+        }
+    }
     
     document.getElementById('listSelect').innerHTML = Object.keys(data).map(l => `<option ${l==currentList?'selected':''}>${l}</option>`).join('');
     render();
